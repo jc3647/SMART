@@ -5,7 +5,6 @@ from inquire.environments.lunar_lander import LunarLander
 from inquire.environments.pizza_making import PizzaMaking
 from inquire.environments.puddleworld import PuddleWorld
 
-
 __all__ = [
     "PuddleWorld",
     "Task",
