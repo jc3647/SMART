@@ -1,1 +1,1 @@
-__all__ = ["Learning", "TrajectorySampling", "CachedSamples", "Range", "Trajectory", "Modality", "Query", "Choice", "Feedback"]
+__all__ = ["Learning", "TrajectorySampling", "CachedSamples", "Range", "Trajectory", "Modality", "Query", "Choice", "Feedback", "FoodItem"]
