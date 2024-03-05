@@ -1,0 +1,18 @@
+name: inquire
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10.2
+  - swig
+  - box2d-py
+  - matplotlib
+  - numpy
+  - pandas
+  - pip
+  - plotly
+  - pip:
+    - dtw-python
+    - gym
+    - pillow
+    - pygame
