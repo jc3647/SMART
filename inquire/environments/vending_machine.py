@@ -61,7 +61,7 @@ food_items = [
 
 
 class VendingMachine():
-    def __init__(self, decay_rate=0.95, food_items=food_items):
+    def __init__(self, decay_rate=0.99, food_items=food_items):
         self.food_items = food_items
         self.num_items = len(self.food_items)
         self.feature_dimensions = 8
@@ -108,24 +108,63 @@ class VendingMachine():
             if item.itemName == food:
                 return item
             
-    def update_preferences_by_cosine_similarity(self, feedback):
+    def update_preferences_by_cosine_similarity(self, feedback, modality, suggestion=None):
         # demonstration update
-        weights = np.array([
-            feedback.ifSolid, feedback.softness, feedback.price, feedback.salt_content, feedback.healthiness_index, feedback.sugar_content, feedback.protein, feedback.calories
-        ])
-        # compute cosine similarity score between chosen item and everything else
-        similarities = cosine_similarity([weights], [[item.ifSolid, item.softness, item.price, item.salt_content, item.healthiness_index, item.sugar_content, item.protein, item.calories] for item in self.food_items])
-        self.user_preferences += self.decay_rate * similarities[0]
-        # normalize self.user_preferences and update decay rate
-        self.user_preferences /= np.sum(self.user_preferences)
-        self.decay_rate *= self.decay_rate
+        if modality == "D":
+            weights = np.array([
+                feedback.ifSolid, feedback.softness, feedback.price, feedback.salt_content, feedback.healthiness_index, feedback.sugar_content, feedback.protein, feedback.calories
+            ])
+            # compute cosine similarity score between chosen item and everything else
+            similarities = cosine_similarity([weights], [[item.ifSolid, item.softness, item.price, item.salt_content, item.healthiness_index, item.sugar_content, item.protein, item.calories] for item in self.food_items])
+            self.user_preferences += self.decay_rate * similarities[0]
+            # normalize self.user_preferences and update decay rate
+            self.user_preferences /= np.sum(self.user_preferences)
+            self.decay_rate *= self.decay_rate
+
+        # correction update
+        if modality == "C":
+            print("suggested: ", suggestion.itemName)
+            print("feedback: ", feedback.itemName)
+            suggestion_weights = np.array([
+                suggestion.ifSolid, suggestion.softness, suggestion.price, suggestion.salt_content, suggestion.healthiness_index, suggestion.sugar_content, suggestion.protein, suggestion.calories
+            ])
+            preferred_weights = np.array([
+                feedback.ifSolid, feedback.softness, feedback.price, feedback.salt_content, feedback.healthiness_index, feedback.sugar_content, feedback.protein, feedback.calories
+            ])
+            similarity_suggested_to_preferred = cosine_similarity([suggestion_weights], [preferred_weights])[0][0]
+            print("similarity_suggested_to_preferred: ", similarity_suggested_to_preferred) 
+
+            for i, item in enumerate(self.food_items):
+                item_weights = np.array([
+                    item.ifSolid, item.softness, item.price, item.salt_content, item.healthiness_index, item.sugar_content, item.protein, item.calories
+                ])
+                similarity_suggested_to_item = cosine_similarity([suggestion_weights], [item_weights])[0][0]
+                similarity_preferred_to_item = cosine_similarity([preferred_weights], [item_weights])[0][0]
+                similarity_difference = similarity_preferred_to_item - similarity_suggested_to_item
+
+                if similarity_difference != 0:
+                    # self.user_preferences[i] += similarity_difference * (1 - similarity_suggested_to_preferred) * self.decay_rate
+
+                    self.user_preferences[i] += similarity_preferred_to_item * similarity_difference * self.decay_rate
+                # no correction needed
+                else:
+                    pass
+            
+            lowest_negative_number = abs(min(self.user_preferences))
+    
+            for i in range(len(self.user_preferences)):
+                self.user_preferences[i] += lowest_negative_number
+            self.user_preferences /= np.sum(self.user_preferences)
+            self.decay_rate *= self.decay_rate
+        
+        
 
         # TESTING PURPOSES
 
-        # display = [[round(self.user_preferences[x], 5), self.food_items[x].itemName] for x in range(len(self.user_preferences))]
-        # display.sort(reverse=True)
-        # print("after normalization: ", display)
-        # print("-----------------------------------")
+        display = [[round(self.user_preferences[x], 5), self.food_items[x].itemName] for x in range(len(self.user_preferences))]
+        display.sort(reverse=True)
+        print("after normalization: ", display)
+        print("-----------------------------------")
     
     def update_preferences_by_gmm(self, feedback):
         weights = np.array([
@@ -162,9 +201,19 @@ apple_it = test.provide_demonstration(apple)
 banana_it = test.provide_demonstration(banana)
 pear_it = test.provide_demonstration(pear)
 orange_it = test.provide_demonstration(orange)
-coffee = test.provide_demonstration(coffee)
+coffee_it = test.provide_demonstration(coffee)
+water_it = test.provide_demonstration("Water")
 
-test.train_gmm()
+test.update_preferences_by_cosine_similarity(coffee_it, "C", apple_it)
+test.update_preferences_by_cosine_similarity(orange_it, "C", apple_it)
+test.update_preferences_by_cosine_similarity(orange_it, "C", water_it)
+test.update_preferences_by_cosine_similarity(water_it, "C", apple_it)
+test.update_preferences_by_cosine_similarity(apple_it, "C", pear_it)
+
+# test.update_preferences_by_cosine_similarity(apple_it, "C", pear_it)
+
+
+# test.train_gmm()
 
 # update_apple = test.update_preferences_by_gmm(apple_it)
 # update_banana = test.update_preferences_by_gmm(banana_it)
@@ -172,14 +221,3 @@ test.train_gmm()
 # update_orange = test.update_preferences_by_gmm(orange_it)
 # update_coffee = test.update_preferences_by_gmm(coffee)
 # update_coffee = test.update_preferences_by_gmm(coffee)
-
-# print("food_it: ", food_it)
-# update = test.update_preferences(food_it)
-# traj = test.generate_trajectory(random_food)
-# print("traj: ", traj.phi, traj.states, traj.actions)
-# print("user_pref: ", test.user_preferences)
-# print("gmm: ", test.gmm)
-# for i in range(10):
-
-# print("food positions: ", test.food_items_positions)
-#     print(test.pick_random_food())
