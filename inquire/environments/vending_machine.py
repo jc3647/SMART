@@ -1,6 +1,40 @@
 
 import numpy as np
-from inquire.utils.features import FoodItem
+from typing import Union
+from sklearn.mixture import GaussianMixture
+from sklearn.metrics.pairwise import cosine_similarity
+# from inquire.utils.features import FoodItem
+# from utils.features import FoodItem
+
+class FoodItem:
+    def __init__(self, itemName, ifSolid, softness, price, salt_content, healthiness_index, sugar_content, protein, calories):
+        self.itemName = itemName
+        self.ifSolid = ifSolid
+        self.softness = softness
+        self.price = price
+        self.salt_content = salt_content
+        self.healthiness_index = healthiness_index
+        self.sugar_content = sugar_content
+        self.protein = protein
+        self.calories = calories
+
+    def display_details(self):
+        print(f"Item Name: {self.itemName}, {'Solid' if self.ifSolid else 'Liquid'}, Softness: {self.softness}, Price: ${self.price}, Salt Content: {self.salt_content}, Healthiness Index: {self.healthiness_index}, Sugar Content: {self.sugar_content}, Protein: {self.protein}, Calories: {self.calories}")
+
+    def normalize_data(self, min_values, max_values):
+        self.softness = (self.softness - min_values['softness']) / (max_values['softness'] - min_values['softness'])
+        self.price = (self.price - min_values['price']) / (max_values['price'] - min_values['price'])
+        self.salt_content = (self.salt_content - min_values['salt_content']) / (max_values['salt_content'] - min_values['salt_content'])
+        self.healthiness_index = (self.healthiness_index - min_values['healthiness_index']) / (max_values['healthiness_index'] - min_values['healthiness_index'])
+        self.sugar_content = (self.sugar_content - min_values['sugar_content']) / (max_values['sugar_content'] - min_values['sugar_content'])
+        self.protein = (self.protein - min_values['protein']) / (max_values['protein'] - min_values['protein'])
+        self.calories = (self.calories - min_values['calories']) / (max_values['calories'] - min_values['calories'])
+class Trajectory:
+    def __init__(self, states: list, actions: list, phi: Union[list, np.ndarray]):
+        self.phi = phi
+        self.states = states
+        self.actions = actions
+
 
 food_items = [
     FoodItem("Regular Potato Chips (Lays)", 1, 5.8, 2.00, 170, 52, 1, 2, 160),
@@ -27,86 +61,125 @@ food_items = [
 
 
 class VendingMachine():
-    def __init__(self):
+    def __init__(self, decay_rate=0.95, food_items=food_items):
         self.food_items = food_items
-        self.food_items_positions = np.arange(len(self.food_items))
+        self.num_items = len(self.food_items)
+        self.feature_dimensions = 8
+        self.num_components = 3
+        self.gmm = GaussianMixture(n_components=self.num_components)#, covariance_type='full', max_iter=100, n_init=1, init_params='kmeans')
+        self.user_preferences = np.ones(self.num_items) / self.num_items
+        self.decay_rate = decay_rate
+        # normalize food items feature weights
+        self.min_values = {
+            "softness": float('inf'),
+            "price": float('inf'),
+            "salt_content": float('inf'),
+            "healthiness_index": float('inf'),
+            "sugar_content": float('inf'),
+            "protein": float('inf'),
+            "calories": float('inf')
+        }
+        self.max_values = {
+            "softness": float('-inf'),
+            "price": float('-inf'),
+            "salt_content": float('-inf'),
+            "healthiness_index": float('-inf'),
+            "sugar_content": float('-inf'),
+            "protein": float('-inf'),
+            "calories": float('-inf')
+        }
+        for food in self.food_items:
+            for key in self.min_values.keys():
+                self.min_values[key] = min(self.min_values[key], getattr(food, key))
+                self.max_values[key] = max(self.max_values[key], getattr(food, key))
 
-    def pick_random_food(self):
-        return np.random.choice(self.food_items).itemName
+        for food in self.food_items:
+            food.normalize_data(self.min_values, self.max_values)
+
+    def train_gmm(self):
+        features = np.array([[item.ifSolid, item.softness, item.price, item.salt_content, item.healthiness_index, item.sugar_content, item.protein, item.calories] for item in self.food_items])
+        self.gmm.fit(features)
+
+    def generate_random_food(self):
+        return np.random.choice(self.food_items)
+    
+    def provide_demonstration(self, food):
+        for item in self.food_items:
+            if item.itemName == food:
+                return item
+            
+    def update_preferences_by_cosine_similarity(self, feedback):
+        # demonstration update
+        weights = np.array([
+            feedback.ifSolid, feedback.softness, feedback.price, feedback.salt_content, feedback.healthiness_index, feedback.sugar_content, feedback.protein, feedback.calories
+        ])
+        # compute cosine similarity score between chosen item and everything else
+        similarities = cosine_similarity([weights], [[item.ifSolid, item.softness, item.price, item.salt_content, item.healthiness_index, item.sugar_content, item.protein, item.calories] for item in self.food_items])
+        self.user_preferences += self.decay_rate * similarities[0]
+        # normalize self.user_preferences and update decay rate
+        self.user_preferences /= np.sum(self.user_preferences)
+        self.decay_rate *= self.decay_rate
+
+        # TESTING PURPOSES
+
+        # display = [[round(self.user_preferences[x], 5), self.food_items[x].itemName] for x in range(len(self.user_preferences))]
+        # display.sort(reverse=True)
+        # print("after normalization: ", display)
+        # print("-----------------------------------")
+    
+    def update_preferences_by_gmm(self, feedback):
+        weights = np.array([
+            feedback.ifSolid, feedback.softness, feedback.price, feedback.salt_content, feedback.healthiness_index, feedback.sugar_content, feedback.protein, feedback.calories
+        ]).reshape(1, -1)
+        # print("weights: ", weights)
+        likelihoods = self.gmm.score_samples(weights)
+        # print("likelihoods: ", likelihoods, "log_likelihoods:" np.exp(likelihoods)) #(self.decay_rate ** len(self.user_preferences)) * likelihoods)
+        # print("likelihoods: ", likelihoods)
+        self.user_preferences += self.decay_rate * likelihoods
+        # print("self.user_preferences: ", self.user_preferences)
+        self.user_preferences /= np.sum(self.user_preferences)
+        self.decay_rate *= self.decay_rate
+
+        # TESTING PURPOSES
+
+        # display = [[round(self.user_preferences[x], 5), self.food_items[x].itemName] for x in range(len(self.user_preferences))]
+        # display.sort(reverse=True)
+        # print("after normalization: ", display)
+        # print("-----------------------------------")
+
     
 test = VendingMachine()
-for i in range(10):
-    print(test.pick_random_food())
-    
+# random_food = test.generate_random_food().itemName
+# print("random_food: ", random_food)
+# food_it = test.provide_demonstration(random_food)
+apple = "Apple"
+banana = "Banana"
+pear = "Pear"
+orange = "Orange"
+coffee = "Coffee"
 
-        
+apple_it = test.provide_demonstration(apple)
+banana_it = test.provide_demonstration(banana)
+pear_it = test.provide_demonstration(pear)
+orange_it = test.provide_demonstration(orange)
+coffee = test.provide_demonstration(coffee)
 
-# class BayesianIRL:
-#     def __init__(self, num_reward_functions, prior_mean=0, prior_variance=1):
-#         self.num_reward_functions = num_reward_functions
-#         self.prior_mean = prior_mean
-#         self.prior_variance = prior_variance
-#         self.reward_functions = np.random.normal(self.prior_mean, np.sqrt(self.prior_variance), size=(self.num_reward_functions,))
-#         self.posterior_distribution = np.ones(self.num_reward_functions) / self.num_reward_functions
+test.train_gmm()
 
-#     def print_all(self):
-#         print("num_reward_functions: ", self.num_reward_functions)
-#         print("prior_mean: ", self.prior_mean)
-#         print("prior_variance: ", self.prior_variance)
-#         print("reward_functions: ", self.reward_functions)
-#         print("posterior_distribution: ", self.posterior_distribution)
+# update_apple = test.update_preferences_by_gmm(apple_it)
+# update_banana = test.update_preferences_by_gmm(banana_it)
+# update_pear = test.update_preferences_by_gmm(pear_it)
+# update_orange = test.update_preferences_by_gmm(orange_it)
+# update_coffee = test.update_preferences_by_gmm(coffee)
+# update_coffee = test.update_preferences_by_gmm(coffee)
 
-#     def update_prior(self, new_prior_mean, new_prior_variance):
-#         self.prior_mean = new_prior_mean
-#         self.prior_variance = new_prior_variance
-#         self.reward_functions = np.random.normal(self.prior_mean, np.sqrt(self.prior_variance), size=(self.num_reward_functions,))
-#         self.posterior_distribution = np.ones(self.num_reward_functions) / self.num_reward_functions
-        
+# print("food_it: ", food_it)
+# update = test.update_preferences(food_it)
+# traj = test.generate_trajectory(random_food)
+# print("traj: ", traj.phi, traj.states, traj.actions)
+# print("user_pref: ", test.user_preferences)
+# print("gmm: ", test.gmm)
+# for i in range(10):
 
-
-
-    # def update_prior(self, new_prior_mean, new_prior_variance):
-    #     self.prior_mean = new_prior_mean
-    #     self.prior_variance = new_prior_variance
-
-    # def update_posterior(self, demonstration, foods):
-    #     likelihoods = self.calculate_likelihoods(demonstration, foods)
-    #     self.posterior_distribution *= likelihoods
-    #     self.posterior_distribution /= np.sum(self.posterior_distribution)
-
-    # def calculate_likelihoods(self, demonstration, foods, weight_vector):
-    #     demonstration_features = demonstration["features"]
-    #     demonstration_score = demonstration["score"]
-    #     likelihoods = []
-    #     for food in foods:
-    #         food_features = food["features"]
-    #         feature_distances = np.abs(demonstration_features - food_features)
-    #         weighted_distances = np.dot(feature_distances, weight_vector)
-    #         likelihood = np.exp(-weighted_distances) if demonstration_score == food["score"] else 0
-    #         likelihoods.append(likelihood)
-    #     return np.array(likelihoods)
-
-# Example Initialization
-# num_reward_functions = 10
-# prior_mean = 0
-# prior_variance = 1
-# bayesian_irl = BayesianIRL(num_reward_functions, prior_mean, prior_variance)
-# bayesian_irl.print_all()
-
-
-
-
-
-# # Example demonstration and foods
-# demonstration = {"features": np.array([0.8, 0.2, 0.5, 0.7, 0.6, 0.3, 0.4, 0.9]), "score": 4.5}
-# foods = [
-#     {"features": np.array([0.7, 0.3, 0.4, 0.6, 0.5, 0.2, 0.3, 0.8]), "score": 4.5},
-#     {"features": np.array([0.6, 0.4, 0.6, 0.5, 0.4, 0.1, 0.2, 0.7]), "score": 3.8},
-#     # Add more food items here
-# ]
-
-# # Example weight vector
-# weight_vector = np.array([0.2, 0.3, 0.1, 0.2, 0.1, 0.05, 0.05, 0.1])
-
-# # Update posterior distribution
-# bayesian_irl.update_posterior(demonstration, foods, weight_vector)
+# print("food positions: ", test.food_items_positions)
+#     print(test.pick_random_food())
