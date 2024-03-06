@@ -108,7 +108,7 @@ class VendingMachine():
             if item.itemName == food:
                 return item
             
-    def update_preferences_by_cosine_similarity(self, feedback, modality, suggestion=None):
+    def update_preferences_by_cosine_similarity(self, feedback, modality="B", suggestion=None):
         # demonstration update
         if modality == "D":
             weights = np.array([
@@ -117,12 +117,9 @@ class VendingMachine():
             # compute cosine similarity score between chosen item and everything else
             similarities = cosine_similarity([weights], [[item.ifSolid, item.softness, item.price, item.salt_content, item.healthiness_index, item.sugar_content, item.protein, item.calories] for item in self.food_items])
             self.user_preferences += self.decay_rate * similarities[0]
-            # normalize self.user_preferences and update decay rate
-            self.user_preferences /= np.sum(self.user_preferences)
-            self.decay_rate *= self.decay_rate
 
         # correction update
-        if modality == "C":
+        elif modality == "C":
             print("suggested: ", suggestion.itemName)
             print("feedback: ", feedback.itemName)
             suggestion_weights = np.array([
@@ -144,7 +141,6 @@ class VendingMachine():
 
                 if similarity_difference != 0:
                     # self.user_preferences[i] += similarity_difference * (1 - similarity_suggested_to_preferred) * self.decay_rate
-
                     self.user_preferences[i] += similarity_preferred_to_item * similarity_difference * self.decay_rate
                 # no correction needed
                 else:
@@ -154,8 +150,54 @@ class VendingMachine():
     
             for i in range(len(self.user_preferences)):
                 self.user_preferences[i] += lowest_negative_number
-            self.user_preferences /= np.sum(self.user_preferences)
-            self.decay_rate *= self.decay_rate
+        
+        # preference update
+        elif modality == "P":
+            option1 = self.generate_random_food()
+            option2 = self.generate_random_food()
+            while option1 == option2:
+                option2 = self.generate_random_food()
+            print("option1: ", option1.itemName)
+            print("option2: ", option2.itemName)
+
+            option1_weights = np.array([
+                option1.ifSolid, option1.softness, option1.price, option1.salt_content, option1.healthiness_index, option1.sugar_content, option1.protein, option1.calories
+            ])
+            option2_weights = np.array([
+                option2.ifSolid, option2.softness, option2.price, option2.salt_content, option2.healthiness_index, option2.sugar_content, option2.protein, option2.calories
+            ])
+            # choose a random number between 1 and 2
+            choice = np.random.choice([1, 2])
+            print("choice: ", option1.itemName if choice == 1 else option2.itemName)
+            if choice == 1:
+                similarities = cosine_similarity([option1_weights], [[item.ifSolid, item.softness, item.price, item.salt_content, item.healthiness_index, item.sugar_content, item.protein, item.calories] for item in self.food_items])
+            else:
+                similarities = cosine_similarity([option2_weights], [[item.ifSolid, item.softness, item.price, item.salt_content, item.healthiness_index, item.sugar_content, item.protein, item.calories] for item in self.food_items])
+            self.user_preferences += self.decay_rate * similarities[0]
+        
+        # binary update
+        elif modality == "B":
+            option = self.generate_random_food()
+            print("option: ", option.itemName)
+            option_weights = np.array([
+                option.ifSolid, option.softness, option.price, option.salt_content, option.healthiness_index, option.sugar_content, option.protein, option.calories
+            ])
+            choice = np.random.choice([0, 1])
+            print("liked" if choice else "disliked")
+            if choice:
+                similarities = cosine_similarity([option_weights], [[item.ifSolid, item.softness, item.price, item.salt_content, item.healthiness_index, item.sugar_content, item.protein, item.calories] for item in self.food_items])
+                self.user_preferences += self.decay_rate * similarities[0]
+            else:
+                similarities = cosine_similarity([option_weights], [[item.ifSolid, item.softness, item.price, item.salt_content, item.healthiness_index, item.sugar_content, item.protein, item.calories] for item in self.food_items])
+                self.user_preferences -= self.decay_rate * similarities[0]
+                lowest_negative_number = abs(min(self.user_preferences))
+                for i in range(len(self.user_preferences)):
+                    self.user_preferences[i] += lowest_negative_number
+
+        self.user_preferences /= np.sum(self.user_preferences)
+        self.decay_rate *= self.decay_rate
+    
+        
         
         
 
@@ -204,11 +246,17 @@ orange_it = test.provide_demonstration(orange)
 coffee_it = test.provide_demonstration(coffee)
 water_it = test.provide_demonstration("Water")
 
-test.update_preferences_by_cosine_similarity(coffee_it, "C", apple_it)
-test.update_preferences_by_cosine_similarity(orange_it, "C", apple_it)
-test.update_preferences_by_cosine_similarity(orange_it, "C", water_it)
-test.update_preferences_by_cosine_similarity(water_it, "C", apple_it)
-test.update_preferences_by_cosine_similarity(apple_it, "C", pear_it)
+# test.update_preferences_by_cosine_similarity(coffee_it, "C", apple_it)
+# test.update_preferences_by_cosine_similarity(orange_it, "C", apple_it)
+# test.update_preferences_by_cosine_similarity(orange_it, "C", water_it)
+# test.update_preferences_by_cosine_similarity(water_it, "C", apple_it)
+# test.update_preferences_by_cosine_similarity(apple_it, "C", pear_it)
+
+for i in range(5):
+    # test.update_preferences_by_cosine_similarity(None, "P", None)
+    test.update_preferences_by_cosine_similarity(None, "B", None)
+
+
 
 # test.update_preferences_by_cosine_similarity(apple_it, "C", pear_it)
 
