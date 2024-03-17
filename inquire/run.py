@@ -38,6 +38,7 @@ def run(
         query_states = 1
     else:
         query_states = real_num_queries
+
     if verbose:
         print("Initializing tasks...")
     if use_cached_trajectories:
@@ -66,6 +67,7 @@ def run(
                 )
             )
     else:
+        # print("reached here: ", domain, num_runs * query_states, num_test_states)
         tasks = [
             Task(
                 domain,
@@ -98,6 +100,7 @@ def run(
             best_traj = task.optimal_trajectory_from_ground_truth(
                 test_state
             )
+            # print("best_traj: ", best_traj.phi, best_traj.states, best_traj.actions)
             max_reward = task.ground_truth_reward(best_traj)
             worst_traj = task.least_optimal_trajectory_from_ground_truth(
                 test_state
@@ -173,6 +176,7 @@ def run(
                     domain, task.query_states[state_idx], w_dist, verbose
                 )
                 state_idx += 1
+                print("teacher: ", teacher)
                 teacher_fb = teacher.query_response(q, task, verbose)
                 if teacher_fb is not None:
                     feedback.append(teacher_fb)
@@ -185,6 +189,8 @@ def run(
                     sample_threshold=convergence_threshold,
                     opt_threshold=1.0e-5,
                 )
+                print("w_dist: ", w_dist)
+                print("w_opt: ", w_opt)
                 if debug:
                     print(f"w after query {k+1}: {w_opt.mean(axis=0)}")
                 ## Get performance metrics for each test-state after
@@ -211,6 +217,7 @@ def run(
                 latest_dist = task.distance_from_ground_truth(
                     np.mean(w_opt, axis=0)
                 )
+                print("latest_dist: ", latest_dist)
                 if k > 0 and debug:
                     print(f"Latest dist: {latest_dist}.")
                 dist_mat[t, r, 0, k + 1] = latest_dist

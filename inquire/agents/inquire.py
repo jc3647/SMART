@@ -85,7 +85,6 @@ class Inquire(Agent):
         traj_samples = self.sampling_method(*sampling_params)
         if not isinstance(self.beta, dict):
             exp_mat = Inquire.generate_exp_mat(curr_w, traj_samples, self.beta)
-
         for i in self.int_types:
             if verbose:
                 print("Assessing " + str(i.name) + " queries...")
@@ -106,9 +105,10 @@ class Inquire(Agent):
         opt_query_idx = np.argmax(all_gains[opt_type])
         query_trajs = [traj_samples[i] for i in all_queries[opt_type][opt_query_idx]]
         opt_query = Query(self.int_types[opt_type], query_state, query_trajs)
-        if verbose:
+        if not verbose:
             print(f"Chosen interaction type: {self.int_types[opt_type].name}")
         self.chosen_interactions.append(self.int_types[opt_type].name)
+        print("optimal query: ", opt_query)
         return opt_query
 
     @staticmethod
@@ -132,6 +132,7 @@ class Inquire(Agent):
 
     def update_weights(self, init_w, domain, feedback, momentum = 0.0, learning_rate=0.05, sample_threshold=1.0e-5, opt_threshold=1.0e-5):
         traj_samples = []
+        print("figuring out how update weights works...")
         for fb in feedback:
             if fb.modality is Modality.BINARY:
                 traj = fb.choice.options[0]

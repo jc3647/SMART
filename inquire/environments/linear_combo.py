@@ -36,6 +36,7 @@ class LinearCombination(Environment):
         return generated
 
     def optimal_trajectory_from_w(self, start_state, w):
+        print("w: ", w)
         return Trajectory(states=np.expand_dims(w,axis=0), actions=None, phi=w)
 
     def trajectory_rollout(self, start_state, actions):

@@ -142,6 +142,7 @@ class ArgsHandler:
                 "linear_system",
                 "pats_linear_system",
                 "pizza",
+                "vm",
             ],
             help="name of the evaluation domain",
         )
@@ -188,7 +189,7 @@ class ArgsHandler:
             type=str,
             dest="teacher_name",
             default="optimal",
-            choices=["optimal"],
+            choices=["optimal", "human"],
             help="name of the simulated teacher to query",
         )
         parser.add_argument(
@@ -230,9 +231,22 @@ class ArgsHandler:
         self.output_name = self._args.output_name
         self.output_dir = self._args.output_dir
 
+        from inquire.environments.vm import VendingMachine
+
+        self.seed = 1337
+        self.w_dim = 8
+        self.vending_machine = VendingMachine(self.seed, self.w_dim)
+
     def setup_domain(self):
         ## Set up domain
-        if self._args.domain_name == "linear_combo":
+        if self._args.domain_name == "vm":
+            domain = self.vending_machine
+
+            # from inquire.environments.vending_machine import VendingMachine
+
+            # domain = VendingMachine()
+
+        elif self._args.domain_name == "linear_combo":
             from inquire.environments.linear_combo import LinearCombination
 
             seed = 42
@@ -279,6 +293,7 @@ class ArgsHandler:
                 optimal_trajectory_iterations=optimization_iteration_count,
                 verbose=self._args.verbose,
             )
+
         elif self._args.domain_name == "pizza":
             from inquire.environments.pizza_making import PizzaMaking
 
@@ -515,4 +530,16 @@ class ArgsHandler:
             teacher = OptimalTeacher(
                 self._args.num_traj_samples, self._args.teacher_displays
             )
+
+        elif self._args.teacher_name == "random":
+            pass
+            # from inquire.teachers.random import RandomTeacher
+            # teacher = RandomTeacher()
+
+        elif self._args.teacher_name == "human":
+            from inquire.teachers.human_teacher import HumanTeacher
+
+            teacher = HumanTeacher(vending_machine=self.vending_machine, N=self._args.num_traj_samples) # self._args.num_traj_samples, self._args.teacher_displays)
+        
         return teacher
+    

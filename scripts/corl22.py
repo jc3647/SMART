@@ -69,6 +69,7 @@ if __name__ == "__main__":
             verbose=args.verbose,
             reuse_weights=args.reuse_weights
         )
+        print("query type: ", q_type)
         if args.output_name is not None:
             dist_sum = np.sum(dist)
             perf_sum = np.sum(perf)

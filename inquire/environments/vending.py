@@ -32,20 +32,43 @@ class VendingMachine:
         self.Q_k_matrices = np.full((self.K, L, L), 0.5)  # 0.5 indicates no preference between any two items
 
     def update_preferences(self, chosen_index, compared_index, outcome):
+        # print("outcome: ", outcome)
         # Direct adjustment based on outcome
         for k in range(self.K):
             self.Q_k_matrices[k][chosen_index][compared_index] = min(1, self.Q_k_matrices[k][chosen_index][compared_index] + outcome)
             self.Q_k_matrices[k][compared_index][chosen_index] = max(0, self.Q_k_matrices[k][compared_index][chosen_index] - outcome)
+    # def provide_feedback(self, user_preference):
+    #     # Compute scores for all items based on distance to user_preference
+    #     scores = self.compute_scores(user_preference)
+        
+    #     # Update Q_k_matrices based on scores
+    #     for i, score_i in enumerate(scores):
+    #         for j, score_j in enumerate(scores):
+    #             if i != j:
+    #                 outcome = score_i - score_j
+    #                 self.update_preferences(i, j, outcome)
 
     def provide_feedback(self, user_preference):
-        # Compute scores for all items based on distance to user_preference
         scores = self.compute_scores(user_preference)
+        L = len(self.food_items)
         
-        # Update Q_k_matrices based on scores
-        for i, score_i in enumerate(scores):
-            for j, score_j in enumerate(scores):
+        # Compute assignment probabilities for each food item
+        assignment_probabilities = np.zeros((L, self.K))
+        for i, food_item in enumerate(self.food_items):
+            assignment_probabilities[i] = self.compute_assignment_probability(food_item.get_features(), sigma_p=1)  # sigma_p needs to be defined based on your system
+            # print("-----------------")
+            # print("food item: ", food_item.itemName)
+            # print("assignment_probabilities: ", assignment_probabilities[i])
+        # Update Q_k_matrices based on both scores and assignment probabilities
+        for i in range(L):
+            for j in range(L):
                 if i != j:
-                    outcome = score_i - score_j
+                    # Calculate influence based on both scores and assignment probabilities
+                    score_difference = scores[i] - scores[j]
+                    # print("score_difference: ", score_difference)
+                    # probability_influence = np.sum(assignment_probabilities[i] - assignment_probabilities[j])
+                    outcome = score_difference # * probability_influence
+                    
                     self.update_preferences(i, j, outcome)
 
     def compute_scores(self, user_preference):
@@ -65,27 +88,6 @@ class VendingMachine:
             scores[i] = 1 - (scores[i] / max_distance)
             
         return scores
-
-    # def update_preferences(self, chosen_index, compared_index, outcome):
-    #     for k in range(self.K):
-    #         self.Q_k_matrices[k][chosen_index][compared_index] += outcome
-    #         self.Q_k_matrices[k][compared_index][chosen_index] -= outcome
-    #         self.Q_k_matrices[k] = np.clip(self.Q_k_matrices[k], 0, 1)
-    
-    # def provide_feedback(self, user_preference, chosen_index):
-    #     assignment_probabilities = self.compute_assignment_probability(self.food_items[chosen_index].get_features(), 1)
-    #     for compared_index, food_item in enumerate(self.food_items):
-    #         if compared_index != chosen_index:
-    #             # Calculate assignment probabilities for the compared food item
-    #             compared_assignment_probabilities = self.compute_assignment_probability(food_item.get_features(), 1)
-    #             print("compared_assignment_probabilities: ", compared_assignment_probabilities)
-    #             print("assignment_probabilities: ", assignment_probabilities)
-                
-    #             # Compute the outcome based on the user preference and compared food item
-    #             outcome = np.dot(user_preference, compared_assignment_probabilities - assignment_probabilities)
-                
-    #             self.update_preferences(chosen_index, compared_index, outcome)
-
 
     def compute_assignment_probability(self, xn, sigma_p):
         probabilities = np.zeros(self.K)
@@ -143,6 +145,9 @@ food_items = [
 
 vending_machine = VendingMachine(food_items, 20)
 vending_machine.provide_feedback(food_items[0].get_features())
+print("Q_k_matrices: ", vending_machine.Q_k_matrices[0][0])
+# for i in range(20):
+#     print("vending machine test: ", vending_machine.Q_k_matrices[i])
 # assignment_probability = vending_machine.compute_assignment_probability(food_items[1].get_features(), 1)
 # print("assignment_probability: ", assignment_probability)
 # vending_machine.compute_posterior_probability(food_items[0].get_features(), 1, assignment_probability)

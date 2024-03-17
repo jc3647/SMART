@@ -22,6 +22,9 @@ class OptimalTeacher(Teacher):
     def query_response(self, q: Query, task: Union[Task, CachedTask], verbose: bool=False) -> Choice:
         if q.query_type is Modality.DEMONSTRATION:
             f = self.demonstration(q, task)
+            for i in f.choice.options:
+                print("option: ", i.phi)
+            # print("the options: ", f.choice.options)
             if self._display_interactions:
                 print("Showing demonstrated trajectory")
                 viz = Viz(f.selection.trajectory)
@@ -73,6 +76,7 @@ class OptimalTeacher(Teacher):
 
     def demonstration(self, query: Query, task: Union[Task, CachedTask]) -> Choice:
         traj = task.optimal_trajectory_from_ground_truth(query.start_state)
+        print("this is the demonstration: ", traj.phi)
         return Feedback(Modality.DEMONSTRATION, query, Choice(traj, [traj] + query.trajectories))
 
     def preference(self, query: Query, task: Union[Task, CachedTask]) -> Choice:
