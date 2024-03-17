@@ -76,6 +76,7 @@ class VendingMachine:
         scores = np.zeros(L)
         max_distance = 0
         
+        
         # Calculate distances and find max for normalization
         for i, food_item in enumerate(self.food_items):
             distance = np.linalg.norm(user_preference - food_item.get_features())
