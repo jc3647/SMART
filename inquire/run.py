@@ -189,8 +189,8 @@ def run(
                     sample_threshold=convergence_threshold,
                     opt_threshold=1.0e-5,
                 )
-                print("w_dist: ", w_dist)
-                print("w_opt: ", w_opt)
+                # print("w_dist: ", w_dist)
+                # print("w_opt: ", w_opt)
                 if debug:
                     print(f"w after query {k+1}: {w_opt.mean(axis=0)}")
                 ## Get performance metrics for each test-state after

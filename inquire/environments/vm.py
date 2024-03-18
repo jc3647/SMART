@@ -1,6 +1,7 @@
 import numpy as np
 from inquire.environments.environment import Environment
 from inquire.utils.datatypes import Trajectory, Range
+import math
 
 class FoodItem:
     def __init__(self, itemName, ifSolid, softness, price, salt_content, healthiness_index, sugar_content, protein, calories):
@@ -18,13 +19,44 @@ class FoodItem:
         return np.array([self.ifSolid, self.softness, self.price, self.salt_content, self.healthiness_index, self.sugar_content, self.protein, self.calories])
     
     def normalize_data(self, min_values, max_values):
-        self.softness = (self.softness - min_values['softness']) / (max_values['softness'] - min_values['softness'])
-        self.price = (self.price - min_values['price']) / (max_values['price'] - min_values['price'])
-        self.salt_content = (self.salt_content - min_values['salt_content']) / (max_values['salt_content'] - min_values['salt_content'])
-        self.healthiness_index = (self.healthiness_index - min_values['healthiness_index']) / (max_values['healthiness_index'] - min_values['healthiness_index'])
-        self.sugar_content = (self.sugar_content - min_values['sugar_content']) / (max_values['sugar_content'] - min_values['sugar_content'])
-        self.protein = (self.protein - min_values['protein']) / (max_values['protein'] - min_values['protein'])
-        self.calories = (self.calories - min_values['calories']) / (max_values['calories'] - min_values['calories'])
+        print("before transformations: ", self.get_features())
+        self.softness = (self.softness - (max_values['softness'] + min_values['softness']) / 2) / ((max_values['softness'] - min_values['softness']) / 2)
+        self.price = (self.price - (max_values['price'] + min_values['price']) / 2) / ((max_values['price'] - min_values['price']) / 2)
+        self.salt_content = (self.salt_content - (max_values['salt_content'] + min_values['salt_content']) / 2) / ((max_values['salt_content'] - min_values['salt_content']) / 2)
+        self.healthiness_index = (self.healthiness_index - (max_values['healthiness_index'] + min_values['healthiness_index']) / 2) / ((max_values['healthiness_index'] - min_values['healthiness_index']) / 2)
+        self.sugar_content = (self.sugar_content - (max_values['sugar_content'] + min_values['sugar_content']) / 2) / ((max_values['sugar_content'] - min_values['sugar_content']) / 2)
+        self.protein = (self.protein - (max_values['protein'] + min_values['protein']) / 2) / ((max_values['protein'] - min_values['protein']) / 2)
+        self.calories = (self.calories - (max_values['calories'] + min_values['calories']) / 2) / ((max_values['calories'] - min_values['calories']) / 2)
+        norm = np.linalg.norm(self.get_features())  # Calculate the Euclidean length of the feature vector
+        print("standardized data: ", self.get_features())
+        print("length: ", math.sqrt(sum([x**2 for x in self.get_features()])),)
+        
+        # for feat in self.get_features():
+        #     feat /= norm
+        self.ifSolid /= norm
+        self.softness /= norm
+        self.price /= norm
+        self.salt_content /= norm
+        self.healthiness_index /= norm
+        self.sugar_content /= norm
+        self.protein /= norm    
+        self.calories /= norm
+
+        print("After Euclidean length normalization: ", self.get_features())
+        print("length: ", math.sqrt(sum([x**2 for x in self.get_features()])))
+        print("itemName: ", self.itemName)
+
+        # features = self.get_features()
+        # norm = np.linalg.norm(features)  # Calculate the Euclidean length of the feature vector
+        # self.ifSolid /= norm
+        # self.softness /= norm
+        # self.price /= norm
+        # self.salt_content /= norm
+        # self.healthiness_index /= norm
+        # self.sugar_content /= norm
+        # self.protein /= norm
+        # self.calories /= norm
+
 
 food_items = [
     FoodItem("Regular Potato Chips (Lays)", 1, 5.8, 2.00, 170, 52, 1, 2, 160),
@@ -93,6 +125,7 @@ class VendingMachine(Environment):
 
         for food in food_items:
             food.normalize_data(self.min_values, self.max_values)
+            # print("normalized data: ", food.get_features(), "length: ", math.sqrt(sum([x**2 for x in food.get_features()])), "itemName: ", food.itemName)
 
         self.food_items = {
             food.itemName: food for food in food_items
@@ -111,15 +144,19 @@ class VendingMachine(Environment):
         # print(np.zeros(self.feat_dim))
         return np.zeros(self.feat_dim) # generate a random item within the vending machine and its position
 
-    # def generate_random_reward(self, random_state):
-    #     generated = self._rng.normal(0, 1, size=(self.feat_dim,))
-    #     generated = generated / np.linalg.norm(generated)
-    #     return generated
-    
     def generate_random_reward(self, random_state):
-        generated = np.abs(self._rng.normal(0, 1, size=(self.feat_dim,)))
-        generated /= np.max(generated)  # Normalize to ensure values are between 0 and 1
+        generated = self._rng.normal(0, 1, size=(self.feat_dim,))
+        generated = generated / np.linalg.norm(generated)
+        testing = math.sqrt(sum([x**2 for x in generated]))
+        print("generated: ", generated, "length: ", testing)
         return generated
+    
+    # def generate_random_reward(self, random_state):
+    #     generated = np.abs(self._rng.normal(0, 1, size=(self.feat_dim,)))
+    #     generated /= np.max(generated)  # Normalize to ensure values are between 0 and 1
+    #     testing = math.sqrt(sum([x**2 for x in generated]))
+    #     print("generated: ", generated, "length: ", testing)
+    #     return generated
 
     def optimal_trajectory_from_w(self, start_state, w):
         # print("expand_dims: ", np.expand_dims(w, axis=0))

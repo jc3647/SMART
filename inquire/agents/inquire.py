@@ -132,7 +132,7 @@ class Inquire(Agent):
 
     def update_weights(self, init_w, domain, feedback, momentum = 0.0, learning_rate=0.05, sample_threshold=1.0e-5, opt_threshold=1.0e-5):
         traj_samples = []
-        print("figuring out how update weights works...")
+        # print("figuring out how update weights works...")
         for fb in feedback:
             if fb.modality is Modality.BINARY:
                 traj = fb.choice.options[0]

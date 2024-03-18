@@ -23,6 +23,10 @@ class HumanTeacher(Teacher):
             f = self.demonstration(q, task)
             print("the demonstration: ", f.choice.selection.phi)
             return f
+        elif q.query_type is Modality.PREFERENCE:
+            f = self.preference(q, task)
+            print("the preference: ", f.choice.selection.phi)
+            return f
         
     def demonstration(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
         print("Please provide your favorite food.")
@@ -45,6 +49,27 @@ class HumanTeacher(Teacher):
             Choice(traj, [traj] + query.trajectories)
         )
         return f
+    
+    # TODO - make the preference actual items
+    def preference(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
+        r = [qi for qi in query.trajectories]
+        print("these are the options: ", r)
+        fav = input("Please provide your preference: ")
+        return Feedback(
+            Modality.PREFERENCE,
+            query,
+            Choice(r[0], r)
+        )
+    
+    # TODO - query for a food, but ask for a correction that should be another food
+    def correction(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
+        pass
+
+    def binary_feedback(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
+        pass
+
+    
+
 
         # get the best trajectory from the task
         # best_traj = task.get_best_trajectory(query.start_state)
