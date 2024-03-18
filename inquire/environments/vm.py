@@ -27,24 +27,24 @@ class FoodItem:
         self.sugar_content = (self.sugar_content - (max_values['sugar_content'] + min_values['sugar_content']) / 2) / ((max_values['sugar_content'] - min_values['sugar_content']) / 2)
         self.protein = (self.protein - (max_values['protein'] + min_values['protein']) / 2) / ((max_values['protein'] - min_values['protein']) / 2)
         self.calories = (self.calories - (max_values['calories'] + min_values['calories']) / 2) / ((max_values['calories'] - min_values['calories']) / 2)
-        norm = np.linalg.norm(self.get_features())  # Calculate the Euclidean length of the feature vector
-        print("standardized data: ", self.get_features())
-        print("length: ", math.sqrt(sum([x**2 for x in self.get_features()])),)
+        # norm = np.linalg.norm(self.get_features())  # Calculate the Euclidean length of the feature vector
+        # print("standardized data: ", self.get_features())
+        # print("length: ", math.sqrt(sum([x**2 for x in self.get_features()])),)
         
-        # for feat in self.get_features():
-        #     feat /= norm
-        self.ifSolid /= norm
-        self.softness /= norm
-        self.price /= norm
-        self.salt_content /= norm
-        self.healthiness_index /= norm
-        self.sugar_content /= norm
-        self.protein /= norm    
-        self.calories /= norm
+        # # for feat in self.get_features():
+        # #     feat /= norm
+        # self.ifSolid /= norm
+        # self.softness /= norm
+        # self.price /= norm
+        # self.salt_content /= norm
+        # self.healthiness_index /= norm
+        # self.sugar_content /= norm
+        # self.protein /= norm    
+        # self.calories /= norm
 
-        print("After Euclidean length normalization: ", self.get_features())
-        print("length: ", math.sqrt(sum([x**2 for x in self.get_features()])))
-        print("itemName: ", self.itemName)
+        # print("After Euclidean length normalization: ", self.get_features())
+        # print("length: ", math.sqrt(sum([x**2 for x in self.get_features()])))
+        # print("itemName: ", self.itemName)
 
         # features = self.get_features()
         # norm = np.linalg.norm(features)  # Calculate the Euclidean length of the feature vector

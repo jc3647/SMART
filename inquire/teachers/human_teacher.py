@@ -53,13 +53,74 @@ class HumanTeacher(Teacher):
     # TODO - make the preference actual items
     def preference(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
         r = [qi for qi in query.trajectories]
-        print("these are the options: ", r)
+        items = []
+        for traj in r:
+            # print("States!!: ", traj.states)
+            # print("Phi: ", traj.phi)
+            closest = float("inf")
+            closest_item = None
+            for item in self.vending_machine_items.values():
+                dist = np.linalg.norm(traj.phi - item.get_features())
+                if dist < closest:
+                    closest = dist
+                    closest_item = item.itemName
+            items.append(closest_item)               
+
+        # give me three random numbers between 0 and 20
+        j = np.random.choice(20, 3, replace=False)
+        # get three random item names from the vending machine
+        random_items = [list(self.vending_machine_items.keys())[i] for i in j]
+                # print("these are the options: ", r)
+        r = [Trajectory(states=self.vending_machine_items[items[0]].get_features(), actions=None, phi=self.vending_machine_items[items[0]].get_features()),
+             Trajectory(states=self.vending_machine_items[items[1]].get_features(), actions=None, phi=self.vending_machine_items[items[1]].get_features()),
+            ]
+        
+        for it in random_items:
+            r.append(Trajectory(states=self.vending_machine_items[it].get_features(), actions=None, phi=self.vending_machine_items[it].get_features()))
+        
+        print("These are your choices: ", items, random_items)
+
         fav = input("Please provide your preference: ")
-        return Feedback(
-            Modality.PREFERENCE,
-            query,
-            Choice(r[0], r)
-        )
+
+
+
+        if fav == "0":
+            print("You've chosen: ", items[0])
+            return Feedback(
+                Modality.PREFERENCE,
+                query,
+                Choice(r[0], r)
+            )
+        elif fav == "1":
+            print("You've chosen: ", items[1])
+            return Feedback(
+                Modality.PREFERENCE,
+                query,
+                Choice(r[1], r)
+            )
+        elif fav == "2":
+            print("You've chosen: ", random_items[0])
+            return Feedback(
+                Modality.PREFERENCE,
+                query,
+                Choice(r[2], r)
+            )
+        elif fav == "3":
+            print("You've chosen: ", random_items[1])
+            return Feedback(
+                Modality.PREFERENCE,
+                query,
+                Choice(r[3], r)
+            )
+        elif fav == "4":
+            print("You've chosen: ", random_items[2])
+            return Feedback(
+                Modality.PREFERENCE,
+                query,
+                Choice(r[4], r)
+            )
+        else:
+            print("I'm sorry, I didn't understand that.")
     
     # TODO - query for a food, but ask for a correction that should be another food
     def correction(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
