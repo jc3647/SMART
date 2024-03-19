@@ -19,7 +19,7 @@ class FoodItem:
         return np.array([self.ifSolid, self.softness, self.price, self.salt_content, self.healthiness_index, self.sugar_content, self.protein, self.calories])
     
     def normalize_data(self, min_values, max_values):
-        print("before transformations: ", self.get_features())
+        # print("before transformations: ", self.get_features())
         self.softness = (self.softness - (max_values['softness'] + min_values['softness']) / 2) / ((max_values['softness'] - min_values['softness']) / 2)
         self.price = (self.price - (max_values['price'] + min_values['price']) / 2) / ((max_values['price'] - min_values['price']) / 2)
         self.salt_content = (self.salt_content - (max_values['salt_content'] + min_values['salt_content']) / 2) / ((max_values['salt_content'] - min_values['salt_content']) / 2)
@@ -27,20 +27,20 @@ class FoodItem:
         self.sugar_content = (self.sugar_content - (max_values['sugar_content'] + min_values['sugar_content']) / 2) / ((max_values['sugar_content'] - min_values['sugar_content']) / 2)
         self.protein = (self.protein - (max_values['protein'] + min_values['protein']) / 2) / ((max_values['protein'] - min_values['protein']) / 2)
         self.calories = (self.calories - (max_values['calories'] + min_values['calories']) / 2) / ((max_values['calories'] - min_values['calories']) / 2)
-        # norm = np.linalg.norm(self.get_features())  # Calculate the Euclidean length of the feature vector
+        norm = np.linalg.norm(self.get_features())  # Calculate the Euclidean length of the feature vector
         # print("standardized data: ", self.get_features())
         # print("length: ", math.sqrt(sum([x**2 for x in self.get_features()])),)
         
-        # # for feat in self.get_features():
-        # #     feat /= norm
-        # self.ifSolid /= norm
-        # self.softness /= norm
-        # self.price /= norm
-        # self.salt_content /= norm
-        # self.healthiness_index /= norm
-        # self.sugar_content /= norm
-        # self.protein /= norm    
-        # self.calories /= norm
+        # for feat in self.get_features():
+        #     feat /= norm
+        self.ifSolid /= norm
+        self.softness /= norm
+        self.price /= norm
+        self.salt_content /= norm
+        self.healthiness_index /= norm
+        self.sugar_content /= norm
+        self.protein /= norm    
+        self.calories /= norm
 
         # print("After Euclidean length normalization: ", self.get_features())
         # print("length: ", math.sqrt(sum([x**2 for x in self.get_features()])))
@@ -141,6 +141,11 @@ class VendingMachine(Environment):
         return self.state_rang # this should represent the modality
 
     def generate_random_state(self, random_state):
+        # generate a random 8D vector that has a length of 1
+        # random_state = self._rng.normal(0, 1, size=(self.feat_dim,))
+        # random_state = random_state / np.linalg.norm(random_state)
+        # return random_state
+
         # print(np.zeros(self.feat_dim))
         return np.zeros(self.feat_dim) # generate a random item within the vending machine and its position
 

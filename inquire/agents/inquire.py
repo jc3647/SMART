@@ -108,7 +108,6 @@ class Inquire(Agent):
         if not verbose:
             print(f"Chosen interaction type: {self.int_types[opt_type].name}")
         self.chosen_interactions.append(self.int_types[opt_type].name)
-        print("optimal query: ", opt_query)
         return opt_query
 
     @staticmethod

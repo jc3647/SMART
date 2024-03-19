@@ -202,7 +202,14 @@ def run(
                     )
 
                     # NEW
-                    print("model_traj", model_traj.phi, model_traj.states, model_traj.actions)
+                    lst = []
+                    for food in domain.food_items:
+                        distance = np.linalg.norm(domain.food_items[food].get_features() - model_traj.phi)
+                        lst.append([distance, food])
+                    lst.sort()
+                    print("lst: ", lst)
+
+                    print("model_traj", model_traj.phi)#, model_traj.states, model_traj.actions)
 
                     reward = task.ground_truth_reward(model_traj)
                     min_r, max_r = test_set[c][2]

@@ -233,7 +233,7 @@ class ArgsHandler:
 
         from inquire.environments.vm import VendingMachine
 
-        self.seed = 1337
+        self.seed = 45 # 1337
         self.w_dim = 8
         self.vending_machine = VendingMachine(self.seed, self.w_dim)
 
