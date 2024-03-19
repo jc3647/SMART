@@ -110,6 +110,7 @@ class OptimalTeacher(Teacher):
         scaled_dists = np.exp(alpha * dists) / np.max(np.exp(alpha * dists))
         ratios = scaled_rewards / scaled_dists
         correction = samples[np.argmax(ratios)]
+        print("correction: ", correction.phi)
         return Feedback(Modality.CORRECTION, query, Choice(selection=correction, options=[correction, t_query]))
 
     def binary_feedback(self, query: Query, task: Union[Task, CachedTask]) -> Choice:

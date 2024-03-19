@@ -23,6 +23,8 @@ class HumanTeacher(Teacher):
             f = self.demonstration(q, task)
         elif q.query_type is Modality.PREFERENCE:
             f = self.preference(q, task)
+        elif q.query_type is Modality.CORRECTION:
+            f = self.correction(q, task)
         elif q.query_type is Modality.BINARY:
             f = self.binary_feedback(q, task)
         return f
@@ -101,7 +103,31 @@ class HumanTeacher(Teacher):
     
     # TODO - query for a food, but ask for a correction that should be another food
     def correction(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
-        pass
+        traj_query = query.trajectories[0]
+
+        closest = float("inf")
+        closest_item = None
+        for item in self.vending_machine_items.values():
+            dist = np.linalg.norm(traj_query.phi - item.get_features())
+            if dist < closest:
+                closest = dist
+                closest_item = item
+        print("closest_item: ", closest_item.itemName, " ", closest_item.get_features())
+
+        corrected_food = input("Please provide the correct food: ")
+        try:
+            corrected = self.vending_machine_items[corrected_food].get_features()
+            traj = Trajectory(states=corrected, actions=None, phi=corrected)
+            print("You have chosen: ", corrected_food)
+        except:
+            print("I'm sorry, I don't have that item in my vending machine.")
+            return
+
+        return Feedback(
+            Modality.CORRECTION,
+            query,
+            Choice(selection=traj, options=[traj, traj_query])
+        )
 
     def binary_feedback(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
 
