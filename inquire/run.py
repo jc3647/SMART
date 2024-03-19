@@ -209,7 +209,7 @@ def run(
                     lst.sort()
                     print("lst: ", lst)
 
-                    print("model_traj", model_traj.phi)#, model_traj.states, model_traj.actions)
+                    # print("model_traj", model_traj.phi)#, model_traj.states, model_traj.actions)
 
                     reward = task.ground_truth_reward(model_traj)
                     min_r, max_r = test_set[c][2]

@@ -24,7 +24,7 @@ class HumanTeacher(Teacher):
         elif q.query_type is Modality.PREFERENCE:
             f = self.preference(q, task)
         elif q.query_type is Modality.BINARY:
-            pass
+            f = self.binary_feedback(q, task)
         return f
         
     def demonstration(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
@@ -68,6 +68,9 @@ class HumanTeacher(Teacher):
             items.append(closest_item)
             print("-----------------")               
 
+        # r = [Trajectory(states=self.vending_machine_items[items[0]].get_features(), actions=None, phi=self.vending_machine_items[items[0]].get_features()), 
+        #      Trajectory(states=self.vending_machine_items[items[1]].get_features(), actions=None, phi=self.vending_machine_items[items[1]].get_features())]  
+
         r.append(Trajectory(states=self.vending_machine_items["Water"].get_features(), actions=None, phi=self.vending_machine_items["Water"].get_features()))
         print("These are your choices: ", items, "Water")#, random_items)
 
@@ -101,21 +104,49 @@ class HumanTeacher(Teacher):
         pass
 
     def binary_feedback(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
-        pass
 
-    
+        traj = query.trajectories[0]
 
+        print("traj: ", traj.phi)
 
-        # get the best trajectory from the task
-        # best_traj = task.get_best_trajectory(query.start_state)
-        # # get the worst trajectory from the task
-        # worst_traj = task.get_worst_trajectory(query.start_state)
-        # # get the trajectory samples from the task
-        # traj_samples = task.get_trajectory_samples(query.start_state)
-        # # create a feedback object
-        # f = Feedback(
-        #     Modality.DEMONSTRATION,
-        #     query,
-        #     Choice(best_traj, [best_traj, worst_traj, traj_samples])
-        # )
-        # return f
+        closest = float("inf")
+        closest_item = None
+        for item in self.vending_machine_items.values():
+            dist = np.linalg.norm(traj.phi - item.get_features())
+            if dist < closest:
+                closest = dist
+                closest_item = item
+        print("closest_item: ", closest_item.itemName, " ", closest_item.get_features())
+        answer = input("Do you like this food? (yes/no): ")
+
+        if answer == "yes":
+            print("Nice! I'm glad you like it!")
+
+            print("query traj: ", query.trajectories[0].phi, query.trajectories[0].states, query.trajectories[0].actions)
+        
+            return Feedback(
+                Modality.BINARY,
+                query,
+                Choice(np.bool_(True), [query.trajectories[0]])
+            )
+
+            # return Feedback(
+            #     query.query_type,
+            #     query,
+            #     Choice(np.bool_(True), [Trajectory(states=closest_item.get_features(), actions=None, phi=closest_item.get_features())])
+            # )
+        else:
+            print("I'm sorry you didn't like it. I'll try to recommend something else.")
+
+        
+            return Feedback(
+                Modality.BINARY,
+                query,
+                Choice(np.bool_(False), [query.trajectories[0]])
+            )
+
+            # return Feedback(
+            #     Modality.BINARY,
+            #     query,
+            #     Choice(np.bool_(False), [Trajectory(states=closest_item.get_features(), actions=None, phi=closest_item.get_features())])
+            # )

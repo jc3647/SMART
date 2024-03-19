@@ -128,4 +128,8 @@ class OptimalTeacher(Teacher):
         query_reward = task.ground_truth_reward(query.trajectories[0])
         bin_fb = (query_reward >= threshold_reward) 
 
+        print("query type: ", query.query_type)
+
+        # print("query traj: ", query.trajectories[0].phi, query.trajectories[0].states, query.trajectories[0].actions)
+
         return Feedback(query.query_type, query, Choice(bin_fb, [query.trajectories[0]]))
