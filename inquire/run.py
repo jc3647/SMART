@@ -8,6 +8,78 @@ from inquire.environments.environment import CachedTask, Task
 from inquire.utils.datatypes import Modality
 from numpy.random import RandomState
 
+import matplotlib.pyplot as plt
+import matplotlib
+
+def run_both(lst):
+    vals = np.array([lst[i][0] for i in range(len(lst))])
+    names = np.array([lst[i][1] for i in range(len(lst))])
+    vals = vals.reshape(5,4)
+    names = names.reshape(5,4)
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))  # Create a single figure with two subplots
+    heatmap = ax[0].imshow(vals, cmap='coolwarm_r', interpolation='nearest')
+    cbar = plt.colorbar(heatmap, ax=ax[0])
+    cbar.set_ticks([np.min(vals), np.max(vals)])
+    cbar.ax.set_yticklabels(['More Preferred', 'Less Preferred'])
+    ax[0].axis('off')
+    ax[0].set_title('Vending Machine Preferences')
+
+    for i in range(5):
+        for j in range(4):
+            txt = names[i, j].split(" ")
+            txt = " \n".join(txt)
+            text = ax[0].text(j, i, txt, wrap=True, ha='center', va='center', color='black', fontsize=8)
+
+    lst.sort()
+    top_ten = lst[:10]
+    values = [item[0] for item in top_ten]
+    values = [max(values) - value for value in values]
+    names = [item[1].split(" ") for item in top_ten]
+    names = [" \n".join(name) for name in names]
+    ax[1].bar(names, values, color='skyblue')
+    ax[1].set_xlabel('Item Name')
+    ax[1].set_title('Top Ten Items (Descending Order)')
+    ax[1].tick_params(axis='x', labelrotation=45, labelsize=8)  # Rotate and adjust font size of x-axis labels
+    ax[1].tick_params(axis='y', labelsize=8)  # Adjust font size of y-axis labels
+    ax[1].get_yaxis().set_visible(False)  # Turn off y-axis
+    
+    plt.tight_layout()  # Adjust subplot layout to prevent overlap
+    plt.show(block=False)
+
+def run_heatmap(lst):
+    vals = np.array([lst[i][0] for i in range(len(lst))])
+    names = np.array([lst[i][1] for i in range(len(lst))])
+    vals = vals.reshape(5,4)
+    names = names.reshape(5,4)
+    fig, ax = plt.subplots()
+    heatmap = ax.imshow(vals, cmap='coolwarm_r', interpolation='nearest')
+    cbar = plt.colorbar(heatmap)
+    cbar.set_ticks([np.min(vals), np.max(vals)])
+    cbar.ax.set_yticklabels(['More Preferred', 'Less Preferred'])
+    plt.axis('off')
+    plt.title('Vending Machine Preferences')
+
+    for i in range(5):
+        for j in range(4):
+            txt = names[i, j].split(" ")
+            txt = " \n".join(txt)
+            text = ax.text(j, i, txt, wrap=True, ha='center', va='center', color='black', fontsize=8)
+
+    plt.show(block=False)
+
+def run_top_ten(lst):
+    lst.sort()
+    top_ten = lst[:10]
+    values = [item[0] for item in top_ten]
+    values = [max(values) - value for value in values]
+    names = [item[1].split(" ") for item in top_ten]
+    names = [" \n".join(name) for name in names]
+    plt.bar(names, values, color='skyblue')
+    plt.xlabel('Item Name')
+    plt.title('Top Ten Items (Descending Order)')
+    plt.gca().axes.get_yaxis().set_visible(False)
+    plt.xticks(fontsize=8)
+    plt.show(block=False)
 
 def run(
     domain,
@@ -206,8 +278,12 @@ def run(
                     for food in domain.food_items:
                         distance = np.linalg.norm(domain.food_items[food].get_features() - model_traj.phi)
                         lst.append([distance, food])
-                    lst.sort()
-                    print("lst: ", lst)
+                        
+                    plt.close()
+                    # run_heatmap(lst)
+                    # run_top_ten(lst)
+                    run_both(lst)
+
 
                     # print("model_traj", model_traj.phi)#, model_traj.states, model_traj.actions)
 

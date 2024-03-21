@@ -15,8 +15,9 @@ class HumanTeacher(Teacher):
         self._alpha = 0.75
         self._N = N
         self._display_interactions = display_interactions
-        # print("vending machine: ", vending_machine.food_items)
         self.vending_machine_items = vending_machine.food_items
+
+        print("these are the items in the vending machine: ", self.vending_machine_items)
     
     def query_response(self, q: Query, task: Union[Task, CachedTask], verbose: bool=False) -> Choice:
         if q.query_type is Modality.DEMONSTRATION:
