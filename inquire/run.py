@@ -273,10 +273,13 @@ def run(
                         test_set[c][0], np.mean(w_opt, axis=0)
                     )
 
+                    print("model_traj: ", model_traj.phi)
+
                     # NEW
                     lst = []
                     for food in domain.food_items:
                         distance = np.linalg.norm(domain.food_items[food].get_features() - model_traj.phi)
+                        print("food: ", domain.food_items[food].get_features(), food)
                         lst.append([distance, food])
                         
                     plt.close()

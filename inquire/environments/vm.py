@@ -2,6 +2,8 @@ import numpy as np
 from inquire.environments.environment import Environment
 from inquire.utils.datatypes import Trajectory, Range
 import math
+from sklearn import preprocessing
+
 
 class FoodItem:
     def __init__(self, itemName, ifSolid, softness, price, salt_content, healthiness_index, sugar_content, protein, calories):
@@ -87,45 +89,69 @@ class VendingMachine(Environment):
         self._seed = seed
         self._rng = np.random.default_rng(self._seed)
         self.feat_dim = w_dim
-        self.action_rang = Range(
-            # min vals for each of the food item features
-            np.array([0, 1, 0.50, 0, 1, 0, 0, 0]),
-            np.ones((w_dim)),
-            # max vals for each of the food item features
-            np.array([1, 10, 3.00, 2225, 100, 45, 9, 425]),
-            np.ones((w_dim)),
-        )
+        self.action_rang = [[
+            food.ifSolid,
+            food.softness,
+            food.price,
+            food.salt_content,
+            food.healthiness_index,
+            food.sugar_content,
+            food.protein,
+            food.calories
+        ] for food in food_items]
+        self.action_rang = np.asarray(self.action_rang)
+        self.action_rang = preprocessing.scale(self.action_rang, axis=0)
+        # repopulate food_items with normalized data
+        for i, food in enumerate(food_items):
+            food_items[i] = FoodItem(
+                food.itemName,
+                self.action_rang[i][0],
+                self.action_rang[i][1],
+                self.action_rang[i][2],
+                self.action_rang[i][3],
+                self.action_rang[i][4],
+                self.action_rang[i][5],
+                self.action_rang[i][6],
+                self.action_rang[i][7],
+            )
+
+        # self.action_range = preprocessing.scale(self.action_rang, axis=1)
+        # self.action_rang = preprocessing.normalize(self.action_rang)
+
+        # print("normalized_arr: ", self.action_rang)
+        # print("self.action_rang: ", self.action_rang)
+
         self.state_rang = self.action_rang
         self.trajectory_length = 1
         self.food_items = {}
 
         # normalize food items feature weights
-        self.min_values = {
-            "softness": float('inf'),
-            "price": float('inf'),
-            "salt_content": float('inf'),
-            "healthiness_index": float('inf'),
-            "sugar_content": float('inf'),
-            "protein": float('inf'),
-            "calories": float('inf')
-        }
-        self.max_values = {
-            "softness": float('-inf'),
-            "price": float('-inf'),
-            "salt_content": float('-inf'),
-            "healthiness_index": float('-inf'),
-            "sugar_content": float('-inf'),
-            "protein": float('-inf'),
-            "calories": float('-inf')
-        }
-        for food in food_items:
-            for key in self.min_values.keys():
-                self.min_values[key] = min(self.min_values[key], getattr(food, key))
-                self.max_values[key] = max(self.max_values[key], getattr(food, key))
+        # self.min_values = {
+        #     "softness": float('inf'),
+        #     "price": float('inf'),
+        #     "salt_content": float('inf'),
+        #     "healthiness_index": float('inf'),
+        #     "sugar_content": float('inf'),
+        #     "protein": float('inf'),
+        #     "calories": float('inf')
+        # }
+        # self.max_values = {
+        #     "softness": float('-inf'),
+        #     "price": float('-inf'),
+        #     "salt_content": float('-inf'),
+        #     "healthiness_index": float('-inf'),
+        #     "sugar_content": float('-inf'),
+        #     "protein": float('-inf'),
+        #     "calories": float('-inf')
+        # }
+        # for food in food_items:
+        #     for key in self.min_values.keys():
+        #         self.min_values[key] = min(self.min_values[key], getattr(food, key))
+        #         self.max_values[key] = max(self.max_values[key], getattr(food, key))
 
-        for food in food_items:
-            food.normalize_data(self.min_values, self.max_values)
-            # print("normalized data: ", food.get_features(), "length: ", math.sqrt(sum([x**2 for x in food.get_features()])), "itemName: ", food.itemName)
+        # for food in food_items:
+        #     food.normalize_data(self.min_values, self.max_values)
+        #     # print("normalized data: ", food.get_features(), "length: ", math.sqrt(sum([x**2 for x in food.get_features()])), "itemName: ", food.itemName)
 
         self.food_items = {
             food.itemName: food for food in food_items
@@ -169,7 +195,9 @@ class VendingMachine(Environment):
 
     def trajectory_rollout(self, start_state, actions):
         action = actions[-self.feat_dim:]
+
         state = action / np.linalg.norm(action)
+
         return Trajectory(states=np.expand_dims(state, axis=0), actions=None, phi=state)
 
     def features_from_trajectory(self, trajectory):
