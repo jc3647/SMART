@@ -40,8 +40,8 @@ class Task:
         for _ in range(num_test_states):
             self.test_states.append(self.domain.generate_random_state(self.rand))
         self._r = self.domain.generate_random_reward(self.rand)
-        print("random state: ", self.rand)
-        print("domain: ", domain)
+        # print("random state: ", self.rand)
+        # print("domain: ", domain)
         print("ground truth: ", self._r)
 
     def get_ground_truth(self):

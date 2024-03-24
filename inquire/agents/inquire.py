@@ -3,6 +3,7 @@ import pandas as pd
 from inquire.utils.datatypes import Query, Modality, CachedSamples
 from inquire.utils.learning import Learning
 from inquire.agents.agent import Agent
+import math
 
 
 class Inquire(Agent):
@@ -83,6 +84,12 @@ class Inquire(Agent):
             print("Sampling trajectories...")
         sampling_params = tuple([query_state, curr_w, domain, self.rand, domain.trajectory_length, self.N, self.optional_sampling_params])
         traj_samples = self.sampling_method(*sampling_params)
+        # print("now here.")
+        # print("curr_w: ", curr_w)
+        # print("sampling_params: ", sampling_params[1], len(sampling_params[1]))
+        # print("query state: ", query_state)
+        # print("traj_samples: ", traj_samples)
+
         if not isinstance(self.beta, dict):
             exp_mat = Inquire.generate_exp_mat(curr_w, traj_samples, self.beta)
         for i in self.int_types:
@@ -108,6 +115,7 @@ class Inquire(Agent):
         if not verbose:
             print(f"Chosen interaction type: {self.int_types[opt_type].name}")
         self.chosen_interactions.append(self.int_types[opt_type].name)
+        # print("opt_query: ", opt_query.trajectories[0].phi, "vector length of phi: ", math.sqrt(sum([i**2 for i in opt_query.trajectories[0].phi])))
         return opt_query
 
     @staticmethod
@@ -143,6 +151,13 @@ class Inquire(Agent):
         if self.use_numba:
             return Learning.numba_gradient_descent(self.rand, feedback, Inquire.gradient, self.beta, domain.w_dim(), self.M, Inquire.convert_binary_feedback, traj_samples, momentum, learning_rate, sample_threshold, opt_threshold)
         else:
+            # print("not using numba")
+            # n = abs(min([min(feedback[0].choice.selection.phi)]))
+            # for i in range(len(feedback[0].choice.selection.phi)):
+            #     feedback[0].choice.selection.phi[i] = -1
+            #     if i == 4:
+            #         feedback[0].choice.selection.phi[i] = 5
+            print("feedback: ", feedback[0].choice.selection.phi)
             return Learning.gradient_descent(self.rand, feedback, Inquire.gradient, self.beta, domain.w_dim(), self.M, Inquire.convert_binary_feedback, traj_samples, momentum, learning_rate, sample_threshold, opt_threshold, prev_w=init_w)
 
     def save_data(self, directory: str, file_name: str, data: np.ndarray = None) -> None:

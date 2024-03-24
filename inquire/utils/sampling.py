@@ -25,7 +25,14 @@ class TrajectorySampling:
                     if within_min and within_max:
                         action_samples[:,:,i] = ai
         else:
-            action_samples = np.stack([rand.choice(action_space[i],size=(N,steps)) for i in range(action_space.shape[0])],axis=-1)
+            # print("action_space: ", action_space)
+            # print("action space: 0", action_space[1])
+            # print("steps: ", N)
+            action_samples = action_space # np.stack([rand.choice(action_space[i],size=(N,steps)) for i in range(action_space.shape[0])],axis=-1)
+            random.shuffle(action_samples)
+            # print("action_samples: ", action_samples)
+            # print("length: ", len(action_samples), len(action_samples[0]), len(action_samples[0][0]))
+            # print("reached here.")
             
-        trajectories = [domain.trajectory_rollout(state, action_samples[i].flatten()) for i in range(N)]
+        trajectories = [domain.trajectory_rollout(state, action_samples[i].flatten()) for i in range(20)]
         return trajectories

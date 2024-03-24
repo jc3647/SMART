@@ -273,13 +273,10 @@ def run(
                         test_set[c][0], np.mean(w_opt, axis=0)
                     )
 
-                    print("model_traj: ", model_traj.phi)
-
                     # NEW
                     lst = []
                     for food in domain.food_items:
                         distance = np.linalg.norm(domain.food_items[food].get_features() - model_traj.phi)
-                        print("food: ", domain.food_items[food].get_features(), food)
                         lst.append([distance, food])
                         
                     plt.close()
@@ -288,7 +285,7 @@ def run(
                     run_both(lst)
 
 
-                    # print("model_traj", model_traj.phi)#, model_traj.states, model_traj.actions)
+                    print("model_traj", model_traj.phi)#, model_traj.states, model_traj.actions)
 
                     reward = task.ground_truth_reward(model_traj)
                     min_r, max_r = test_set[c][2]

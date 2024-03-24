@@ -179,7 +179,7 @@ class VendingMachine(Environment):
         generated = self._rng.normal(0, 1, size=(self.feat_dim,))
         generated = generated / np.linalg.norm(generated)
         testing = math.sqrt(sum([x**2 for x in generated]))
-        print("generated: ", generated, "length: ", testing)
+        # print("generated: ", generated, "length: ", testing)
         return generated
     
     # def generate_random_reward(self, random_state):
@@ -196,7 +196,7 @@ class VendingMachine(Environment):
     def trajectory_rollout(self, start_state, actions):
         action = actions[-self.feat_dim:]
 
-        state = action / np.linalg.norm(action)
+        state = action # / np.linalg.norm(action)
 
         return Trajectory(states=np.expand_dims(state, axis=0), actions=None, phi=state)
 

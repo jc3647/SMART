@@ -57,25 +57,23 @@ class HumanTeacher(Teacher):
     
     def preference(self, query: Query, task: Union[Task, CachedTask]) -> Feedback:
         r = [qi for qi in query.trajectories]
+        # print("trajectory phis: ", [traj.phi for traj in r])
         items = []
         for traj in r:
-            closest = float("inf")
-            closest_item = None
-            # print("phi: ", traj.phi, "length: ", np.linalg.norm(traj.phi))
+            # closest = float("inf")
+            # closest_item = None
             for item in self.vending_machine_items.values():
-                dist = np.linalg.norm(traj.phi - item.get_features())
-                # print("dist: ", dist, "item: ", item.itemName)
-                if dist < closest:
-                    closest = dist
-                    closest_item = item.itemName
-            items.append(closest_item)
+                if sum(traj.phi) == sum(item.get_features()):
+                    items.append(item.itemName)
+                    break
+                # dist = np.linalg.norm(traj.phi - item.get_features())
+                # if dist < closest:
+                #     closest = dist
+                #     closest_item = item.itemName
+            # items.append(closest_item)
             print("-----------------")               
 
-        # r = [Trajectory(states=self.vending_machine_items[items[0]].get_features(), actions=None, phi=self.vending_machine_items[items[0]].get_features()), 
-        #      Trajectory(states=self.vending_machine_items[items[1]].get_features(), actions=None, phi=self.vending_machine_items[items[1]].get_features())]  
-
-        r.append(Trajectory(states=self.vending_machine_items["Water"].get_features(), actions=None, phi=self.vending_machine_items["Water"].get_features()))
-        print("These are your choices: ", items, "Water")#, random_items)
+        print("These are your choices: ", items)#, random_items)
 
         fav = input("Please provide your preference: ")
         if fav == "0":
